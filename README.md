@@ -6,5 +6,5 @@ This is the source code for paper *A Multi-Resolution Network Architecture for D
 
 TODO: code will come soon
 
-[Supplemantary video](https://github.com/zjumsj/MRNDNL.github.io)
+[Supplemantary video](https://zjumsj.github.io/MRNDNL.github.io/)
 

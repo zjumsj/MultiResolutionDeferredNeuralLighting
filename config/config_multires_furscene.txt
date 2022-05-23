@@ -1,0 +1,21 @@
+
+dataDir = ./dataset/furscene/fulldataset
+logDir = ./logdir/multires_furscene_full
+summaryDir = ./tbdir/multires_furscene_full
+
+lr = 0.0002
+batch_size = 1
+loss = l1
+
+texture_size = 512
+texture_channels = 30
+texture_levels = 4
+
+LDR = False
+linear = False
+
+crop_w = 512
+crop_h = 512
+
+data_max_val = 1.
+keep_max_val = 1.

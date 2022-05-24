@@ -43,7 +43,9 @@ parser.add_argument('--test_dataset', type=str, default = None)
 ########
 
 parser.add_argument('--progressive_flag', type=int, default = 0,
-                    help = '0 disable, 1 progressive training, 2 gather loss in all levels')
+                    help = '0 naive end-to-end training, 1 progressive training, 2 gather loss in all levels')
+parser.add_argument('--stage', type=int, default = None,
+                    help = 'control logic used in progressive training')
 
 parser.add_argument('--rescale_input', type=float, default = 1.) # scale input
 parser.add_argument('--rescale_output', type=float, default = 1.) # scale output, only affect display
@@ -297,7 +299,7 @@ def main():
         # the file can be downloaded here: https://www.cs.toronto.edu/~frossard/post/vgg16/
         G_model.vgg_op.load_weights("./src/vgg/vgg16_weights.npz",sess)
 
-    if args.checkpoint is not None:
+    if args.checkpoint is not None and args.checkpoint != "None":
         restore_model(sess, "G_", saver_G, args.checkpoint, args)
         if args.adv_loss_scale != 0:
             restore_model(sess,"D_", saver_D, args.checkpoint, args)

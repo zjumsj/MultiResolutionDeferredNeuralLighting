@@ -54,10 +54,9 @@ class LogIOMapper(IOMapper):
     And map 0 ==> 0
     """
     def map_texture(self, x):
-        # MSJ: looks like a bug, but I'm not sure
-        y = x + 1.0 - 1.0/math.e  # shift zero
+        y = x + 1.0 - 1.0/math.e
         #y = tf.maximum(x, tf.zeros_like(y)) + 1.0 / math.e # => [1/e, inf]
-        y = tf.maximum(y, tf.zeros_like(y)) + 1.0 / math.e # MSJ: modified
+        y = tf.maximum(y, tf.zeros_like(y)) + 1.0 / math.e # => [1/e, inf]
         y = tf.log(y) #[-1, inf]
         return y
 

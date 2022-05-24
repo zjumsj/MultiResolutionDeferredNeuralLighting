@@ -7,9 +7,7 @@ import numpy as np
 import tensorflow as tf
 import math
 
-################# msj added
-
-sparse_list = []
+#################
 
 def apply_bias(x):
     b = tf.get_variable('bias', shape=[x.shape[-1]], initializer=tf.initializers.zeros())
@@ -92,7 +90,6 @@ def resnet_cyclegan(inputs, output_channles, activation, prefix, args):
                      do_norm=True, do_relu=True, relufactor=0):
         with tf.variable_scope(name):
 
-            # NOTICE !!
             type = 0
 
             if type == 0: # transposed conv
@@ -130,7 +127,6 @@ def resnet_cyclegan(inputs, output_channles, activation, prefix, args):
 
             return tf.nn.relu(out_res + inputres)
 
-    global sparse_list
 
     ngf = args.ngf
     n_downsampling = args.resnet_conv_count
@@ -164,11 +160,6 @@ def resnet_cyclegan(inputs, output_channles, activation, prefix, args):
         for i in range(n_resblock):
             o_r_tmp = build_resnet_block(layers[-1], ngf * 2 * res_mul, "r%d" % (i+1), padding)
             layers.append(o_r_tmp)
-            # msj added debug
-            activation_ = tf.cast(o_r_tmp > 1e-8,tf.float32)
-            activation_rate = tf.reduce_mean(activation_,axis=[0,1,2]) # -> C
-            sparse_list.append(activation_rate)
-
 
         # up sampling
         for i in range(n_downsampling):

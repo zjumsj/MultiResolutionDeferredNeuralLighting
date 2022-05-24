@@ -268,8 +268,6 @@ class PGArchitecture:
     def texture_decoder(self,inputs,output_channels,activation,prefix,args):
 
         ngf = args.ngf
-        #n_upsampling = args.resnet_res_count
-        #n_conv = args.resnet_conv_count
         n_upsampling = args.module_count
         n_conv = args.conv_count
 
@@ -308,10 +306,8 @@ class PGArchitecture:
 
     # the proposed architecture with progressive training & multi-level loss support
     def texture_decoder_progressive(self, inputs, output_channels, activation, prefix, args):
-        # progressive training, see PGGAN
+
         ngf = args.ngf
-        #n_upsampling = args.resnet_res_count
-        #n_conv = args.resnet_conv_count
         n_upsampling = args.module_count
         n_conv = args.conv_count
 
@@ -351,37 +347,36 @@ class PGArchitecture:
     # other design of feature transform module shown in evaluation
     def texture_decoder_v2(self,inputs,output_channels,activation,prefix,args):
 
-        setting = 0 # NOTICE !!
+        setting = 0 # {0,1,2,3,4}
 
         # params definition
-        # n downsampling number
-        # n+1 upsampling number
-        # p normal convolution number
-        # m resblock number
+        # m downsampling number
+        # m+1 upsampling number
+        # n normal convolution number
+        # q resblock number
 
-        n = 0 ## ours default setting
-        p = 1
-        m = 0
+        m = 0 ## ours default setting
+        n = 1
+        q = 0
 
         if setting == 1: # no downsample, resblock=1
+            m = 0
             n = 0
-            p = 0
-            m = 1
+            q = 1
         elif setting == 2: # no downsample, resblock=2
+            m = 0
             n = 0
-            p = 0
-            m = 2
+            q = 2
         elif setting == 3: # one downsample, resblock=1
-            n = 1
-            p = 0
             m = 1
+            n = 0
+            q = 1
         elif setting == 4: # one downsample, resblock=2
-            n = 1
-            p = 0
-            m = 2
+            m = 1
+            n = 0
+            q = 2
 
         ngf = args.ngf
-        #n_upsampling = args.resnet_res_count
         n_upsampling = args.module_count
         padding = args.resnet_padding
 
@@ -397,14 +392,13 @@ class PGArchitecture:
                 else:
                     x = tf.concat([x,inputs[idx]],axis=-1)
 
-                for jj in range(n): # downsample
+                for jj in range(m): # downsample
                     x = self.general_conv2d(x,ngf,3,3,2,2,0.02,"SAME","down%d_%d" % (idx,jj),do_norm=self.gb_do_norm)
 
-                for jj in range(p): # normal conv
+                for jj in range(n): # normal conv
                     if use_gated_conv:
                         x = self.gated_conv(x,ngf,3,3,1,1,"gated_conv%d_%d" % (idx,jj), padding=padding,do_norm=self.gb_do_norm)
                     else:
-                        #x_pad = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]],mode='REFLECT')
                         x_pad = tf.pad(x,[[0,0],[1,1],[1,1],[0,0]], mode='SYMMETRIC')
                         x = self.general_conv2d(x_pad,ngf,3,3,1,1,0.02,"VALID","conv%d_%d" % (idx,jj),do_norm=self.gb_do_norm)
 
@@ -412,11 +406,11 @@ class PGArchitecture:
                     print('extra layer added!')
                     x = self.general_conv2d(x,ngf,1,1,1,1,0.02,"VALID","conv%d_0" % idx,do_norm=False,do_relu=False)
 
-                for jj in range(m): # resblock
+                for jj in range(q): # resblock
                     x = self.build_resnet_block(x, ngf, do_final_relu, "resblock%d_%d" % (idx,jj), padding, do_norm=self.gb_do_norm)
 
-                for jj in range(n+1): # upsampling
-                    if jj == n and idx == n_upsampling - 1:
+                for jj in range(m + 1): # upsampling
+                    if jj == m and idx == n_upsampling - 1:
                         # final layer
                         o_c6 = self.general_conv2d(x,output_channels,3,3,1,1,0.02,"SAME",'final',do_norm=False,do_relu=False)
                     else:

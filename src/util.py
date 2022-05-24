@@ -1,5 +1,4 @@
 import random
-#import argparse
 import configargparse
 import numpy as np
 import tensorflow as tf
@@ -85,4 +84,3 @@ def str2bool(v):
         return False
     else:
         raise configargparse.ArgumentTypeError('Boolean value expected.')
-        #raise argparse.ArgumentTypeError('Boolean value expected.')

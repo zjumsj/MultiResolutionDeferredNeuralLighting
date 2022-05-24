@@ -18,7 +18,7 @@ def parse_tfrecord_np_shape(record):
     return np.fromstring(data, np.float16).reshape(shape)
 
 def parse_tfrecord_tf(record, args):
-    # probably data is encoded as bytes(string?)
+
     features = tf.parse_single_example(record, features={
         'shape': tf.FixedLenFeature([3], tf.int64),
         'color_basis': tf.FixedLenFeature([], tf.string),
@@ -48,7 +48,7 @@ def load_data_iterator(args, data_dir=None, seed = None):
     
     assert os.path.isdir(data_dir)
     tfr_files = sorted(glob.glob(os.path.join(data_dir, '*.tfrecords')))
-    # TODO: msj modified, read all tfrecords
+    # support reading from all 13 clusters
     if len(tfr_files) == 0:
         for i_part in range(13):
             tfr_files = tfr_files + glob.glob(os.path.join(data_dir,'Cluster_%d/*.tfrecords' % i_part))

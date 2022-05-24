@@ -8,28 +8,23 @@ from neural_texture import create_neural_texture, sample_texture
 import tensorflow as tf
 import collections
 
-# TODO, remove xxx
-from src.ops_experimental import PGArchitecture
-from src.ops import avg_downsample
-from src.ops import GDSummaryWriter
-from src.ops import quantize_gamma
-from src.loss import compute_loss
-from src.ops import compute_number_of_parameters
-from src.ops import create_train_op
-from src.vgg.perceptual_loss import perceptual_loss_vgg16
-#from vgg.vgg19 import perceptual_loss_vgg19
+from ops_experimental import PGArchitecture
+from ops import avg_downsample
+from ops import GDSummaryWriter
+from ops import quantize_gamma
+from loss import compute_loss
+from ops import compute_number_of_parameters
+from ops import create_train_op
+from vgg.perceptual_loss import perceptual_loss_vgg16
 from functools import partial
 
-from src.neural_render import select_k_basis_from_5, sample_texture_lod_bias
+from neural_render import select_k_basis_from_5, sample_texture_lod_bias
 
 # progressive_flag
 # enable to use progressive training
 # 0 disable
 # 1 classical progressive training
 # 2 gather loss in all levels
-
-#progressive_flag = 2 # 0
-#progressive_flag = 0
 
 def neural_render(neural_texture, uv, lod, index, _basis, args):
 
@@ -49,11 +44,9 @@ def neural_render(neural_texture, uv, lod, index, _basis, args):
 
         with tf.variable_scope("multiply_basis_and_sample_texture"):
 
-            #n_upsampling = args.resnet_res_count
             n_upsampling = args.module_count
 
             input_list = []
-            #sampled_texture_list = [] # visualize sampled texture
             mapped_basis = args.mapper.map_input(basis)
 
             merged_feature = tf.concat([mapped_basis, sampled_texture],axis=-1)
@@ -71,24 +64,25 @@ def neural_render(neural_texture, uv, lod, index, _basis, args):
             do_norm=True
         )
         if args.progressive_flag == 1:
-            # classical progressive training
+            # progressive training
             output = c_.texture_decoder_progressive(input_list,3,args.activation,'render',args)
 
-            if args.stage > 2 * args.module_count - 2 or args.stage < 0:  # default all layers in
+            if args.stage > 2 * args.module_count - 2 or args.stage < 0: # return finest level
                 output = output[-1]
-            elif args.stage % 2 == 0:  # single
+            elif args.stage % 2 == 0:  # return one coarse level
                 output = output[args.stage // 2]
-            else:
+            else: # interpolate between two levels
                 output_low = output[(args.stage - 1) // 2]
                 output_high = output[(args.stage + 1) // 2]
                 output_low = tf.image.resize(output_low, tf.shape(output_high)[1:3], method='bilinear')
                 output = output_low * (1 - args.lod) + output_high * args.lod
         elif args.progressive_flag == 2:
-            # count all loss
+            # gather loss from all levels
             output = c_.texture_decoder_progressive(input_list,3,args.activation,'render',args)
         else:
             ## texture_decoder is our default network architecture
-            ## TODO, write something here
+            ## texture_decoder_v2 provides other architectures for Feature Transform Module
+            ## NT_unet is network architecture from Deferred Neural Rendering, Image Synthesis using Neural Textures
 
             #output = c_.texture_decoder_v2(input_list,3,args.activation,'render',args)
             #output = c_.NT_unet(input_list,3,args.activation,'render',args)
@@ -105,7 +99,6 @@ Model = collections.namedtuple("Model", "train_op, vgg_op, summary_op, loss, var
 
 def create_model(dataset, args, first_call=True):
 
-    #n_upsampling = args.resnet_res_count
     n_upsampling = args.module_count
 
     #define network
@@ -121,9 +114,8 @@ def create_model(dataset, args, first_call=True):
 
     # loss and train_op
     loss = tf.zeros(shape=(), dtype=tf.float32)
-    # loss_aug = tf.zeros(shape=(), dtype=tf.float32)
 
-    if "color_gt" in dataset._fields: # for compatibility with downgraded edition
+    if "color_gt" in dataset._fields: # for compatibility
         target_image = dataset.color_gt * dataset.mask
     else:
         target_image = dataset.color * dataset.mask
@@ -160,9 +152,10 @@ def create_model(dataset, args, first_call=True):
     common_loss = None
     if args.loss_scale != 0:
         if args.progressive_flag == 2:
-            # TODO ...
+
             #W = [1.] * n_upsampling # each layer is equally evaluated
             W = [1./float(ii * ii) for ii in range(1,n_upsampling + 1)] # each pixel is equally evaluated
+
             W[0] = W[0] * 100. # put more weight on the finest level
 
             common_loss = compute_loss(output,target, args.loss, weights= W )

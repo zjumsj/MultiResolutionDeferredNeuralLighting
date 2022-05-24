@@ -198,35 +198,3 @@ def G_lsgan(model,params_fake, patch_gan = True, style = 1):
         loss = D_loss_fake
     return loss
 
-#-------------------------------------------------------------------------
-def debug1():
-
-    x = tf.placeholder(tf.float32,[2,16,16,3])
-
-    with tf.variable_scope("debug1"):
-        y = tf.contrib.layers.conv2d(x,num_outputs=5,kernel_size=3,padding="same")
-        y = tf.contrib.layers.conv2d(y,num_outputs=1,kernel_size=3,padding="same")
-        #y = x
-
-        some = tf.gradients(y,[x])[0]
-        some2 = tf.gradients(tf.reduce_sum(y),[x])[0]
-        print(some)
-
-    #return
-
-    sess = tf.Session()
-
-    # initial variables
-    init_op = tf.global_variables_initializer()
-    sess.run(init_op)
-
-    x_ = np.random.uniform(-1,1,size=[2,16,16,3])
-    some_ = sess.run(some,{x:x_})
-    some2_ = sess.run(some2,{x:x_})
-    #print(some_.shape,some_.dtype)
-    print(some_[0,0:4,0:4,:])
-    print(some2_[0,0:4,0:4,:])
-
-
-if __name__ == "__main__":
-    debug1()

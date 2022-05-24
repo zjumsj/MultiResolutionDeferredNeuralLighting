@@ -3,7 +3,7 @@ import Imath
 import numpy as np
 import struct
 
-# the data return is like opencv
+# the data return is in opencv style
 # left top is (0,0)
 def EXRLoaderRGB(dataPath):
     '''

@@ -1,8 +1,6 @@
 import tensorflow as tf
 from ops import avg_downsample
 
-#DEBUG_ = None
-
 """
 Interface: create and sample neural textures
 """
@@ -44,7 +42,6 @@ def _uv2index(uvs, shape, mode='clamp', flip_y = False):
     if mode == 'repeat':
         return uvs % 1. * texture_shape
     elif mode == 'clamp':
-        # MSJ: somehow not very reasonable, use (texture_shape - 1e-3) ?
         #return tf.clip_by_value(uvs, 0., (texture_shape-1.0 - 1e-3)/texture_shape) * texture_shape
         return tf.clip_by_value(uvs, 0., (texture_shape - 1e-3) / texture_shape) * texture_shape
     else:

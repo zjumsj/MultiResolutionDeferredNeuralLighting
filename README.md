@@ -5,7 +5,7 @@ Tensorflow implementation of paper *A Multi-Resolution Network Architecture for 
 ![teaser](./fig/total2_casa.png)
 [Supplemantary video](https://zjumsj.github.io/MRNDNL.github.io/)
 
-Our method considerably improves the high-frequency details as well as temporal stability in rendering animation in neural relighting. The code is partially based on [DeferredNeuralLighting](https://github.com/msraig/DeferredNeuralLighting) and we refer to their method as baseline.   
+Our method considerably improves the high-frequency details as well as temporal stability in rendering animation in neural relighting. The code is partially based on [DeferredNeuralLighting](https://github.com/msraig/DeferredNeuralLighting) and we refer to their method as *baseline*.   
 
 
 
@@ -40,11 +40,11 @@ The dataset is derived from [DeferredNeuralLighting](https://github.com/msraig/D
 ## Test 
 ### Pretrained models
 
-We provide pre-trained models of all the five datasets including baseline models. We train all the models in both full and reduced datasets.
+We provide pre-trained models of all the five scenes including baseline models. We also provide models trained on both full and reduced dataset.
 
 The pretrained models can be found in folder *models* from [Google Drive](https://drive.google.com/drive/folders/1h2F9OFWf814opyvX_XiIc3OBJdyv9mEw?usp=sharing) or [OneDrive](https://zjueducn-my.sharepoint.com/:f:/g/personal/3140103086_zju_edu_cn/EoRrq2-SRjlLt7t4HLsXkwABYLHcJMetyH-hpYr3g84aeA?e=8kvKoj).
 
-The models should be unzipped and put in `./models`, you should get something like this:  
+The models should be unzipped and put in `./models`. You should get something like this:  
 ```
 .
 └── models
@@ -59,7 +59,7 @@ The models should be unzipped and put in `./models`, you should get something li
 
 The test dataset can be found in folder *test* from [Google Drive](https://drive.google.com/drive/folders/1h2F9OFWf814opyvX_XiIc3OBJdyv9mEw?usp=sharing) or [OneDrive](https://zjueducn-my.sharepoint.com/:f:/g/personal/3140103086_zju_edu_cn/EoRrq2-SRjlLt7t4HLsXkwABYLHcJMetyH-hpYr3g84aeA?e=8kvKoj).
 
-The dataset should be unzipped and put in `./test`, you should get something like this:  
+The dataset should be unzipped and put in `./test`. You should get something like this:  
 ```
 .
 └── test
@@ -85,7 +85,18 @@ Then, you can run `python gen_video_from_seq.py val` to generate videos from ima
 
 ## Train
 
-To train a model, you can download a training dataset [here](TODO) and put it in `./dataset`.  
+To train a model, you can download a training dataset [here](TODO) and put it in `./dataset`. You should get something like this:
+
+```
+.
+└── dataset
+       ├── furscene    					
+       │      ├── fulldataset   		
+       │      └── reduced_2000
+       └── pixiu
+              ├── fulldataset   		
+              └── reduced_2000
+```
 
 Here is an example of training on full dataset of Cluttered scene.
 ```
@@ -101,12 +112,12 @@ python train_baseline.py --config config/config_baseline_furscene.txt --device 0
 
 Train with full multi-scale loss
 ```
-TODO
+python train_multires.py --config config/config_fullLoss.txt --device 0
 ```
 
 Train with progressive strategy
 ```
-TODO, run a script
+bash train_progressive.sh
 ```
 
 

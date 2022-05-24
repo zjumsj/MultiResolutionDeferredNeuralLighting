@@ -1,27 +1,20 @@
 import sys
 sys.path.append('./src')
-#import argparse
 import configargparse
 import os
 import tensorflow as tf
 from tqdm import tqdm
 import numpy as np
 
-# NOTICE !!
-#import config.config_exp2 as config
-#import config.config_exp2_downgrade as config
-
-# TODO, remove src
-from src.IO_mapper import LogIOMapper
-from src.util import str2bool, set_random_seed, initial_logger
-from src.neural_render_multires import create_model
-from src.gan_net import PGGAN_D,SRGAN_D
-from src.adversarial_loss import G_gan,D_gan,G_wgan,D_wgan,G_lsgan,D_lsgan
-from src.data_min_size import load_data, load_test_data
-from src.ops import create_train_op , GDSummaryWriter, compute_number_of_parameters
+from IO_mapper import LogIOMapper
+from util import str2bool, set_random_seed, initial_logger
+from neural_render_multires import create_model
+from gan_net import PGGAN_D,SRGAN_D
+from adversarial_loss import G_gan,D_gan,G_wgan,D_wgan,G_lsgan,D_lsgan
+from data_min_size import load_data, load_test_data
+from ops import create_train_op , GDSummaryWriter, compute_number_of_parameters
 import collections
 
-#parser = argparse.ArgumentParser()
 parser = configargparse.ArgumentParser()
 parser.add_argument('--config', is_config_file = True,
                     help = "config file path")
@@ -161,9 +154,15 @@ def create_summary(scalar,images,args):
     return summary_op
 
 # TODO, are you sure you have lod ?
+'''
 Dataset = collections.namedtuple(
     "Dataset",
     "iterator,color,uv,lod,mask,basis,index"
+)
+'''
+Dataset = collections.namedtuple(
+    "Dataset",
+    "iterator,color,uv,mask,basis,index"
 )
 
 
@@ -178,10 +177,10 @@ def stupid_create_placeholder(args):
         iterator = None,
         color = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,3]),
         uv = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,2]),
-        lod = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,1]),
+        #lod = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,1]),
         mask = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,1]),
         basis = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,15]),
-        index = tf.placeholder(tf.int32,[batch_size,1]) # not sure
+        index = tf.placeholder(tf.int32,[batch_size,1])
     )
     return dataset
 
@@ -224,6 +223,9 @@ def main():
     dataset_in = dataset
     if args.adv_loss_scale != 0:
         dataset_in = stupid_create_placeholder(args)
+
+    lod = tf.placeholder(tf.float32,[]) # create lod
+    args.lod = lod
 
     G_model = create_model(dataset_in,args,first_call=True)
     g_loss_total = G_model.loss
@@ -293,9 +295,8 @@ def main():
     # initial variables
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
-    if G_model.vgg_op is not None: # TODO
+    if G_model.vgg_op is not None:
         logger.info('Load Vgg16 weights')
-        #G_model.vgg_op.load_weights("vgg/vgg16_weights.zip",sess)
         # the file can be downloaded here: https://www.cs.toronto.edu/~frossard/post/vgg16/
         G_model.vgg_op.load_weights("./src/vgg/vgg16_weights.npz",sess)
 
@@ -344,12 +345,15 @@ def main():
     for step in tqdm(range(args.start_step, end_step), file=sys.stdout):
         def should(freq):
             return freq > 0 and (step % freq == 0 or step == end_step - 1)
+        lod_ = float(step - args.start_step) / float(end_step - args.start_step)
 
         if args.adv_loss_scale != 0:
 
             # FIXME: quite stupid and inefficient, but TFRecordDataset does not provide proper API
             # How to run twice with input fixed elegantly?
             data_feed_in = stupid_get_data(sess2, dataset, dataset_in)
+            data_feed_in[lod] = lod_
+
             for iD in range(args.D_repeats):
                 fetches = {
                     'loss': d_loss,
@@ -378,7 +382,7 @@ def main():
         if args.adv_loss_scale != 0:
             results = sess.run(fetches, feed_dict=data_feed_in)
         else:
-            results = sess.run(fetches)
+            results = sess.run(fetches, feed_dict={lod:lod_})
 
         # display
         if should(args.display_freq):
@@ -450,6 +454,13 @@ def test():
         dataset = TestDataset(uv=uv,basis=basis,iterator=None,color=None,mask=None,index=None)
     output = create_test_model(dataset,args)
 
+    if isinstance(output,list):
+        output.reverse()  # fine -> coarse
+        for i_level in range(args.module_count):  # create multiple dir
+            dir_ = os.path.join(args.test_savedir, '%d' % i_level)
+            if not os.path.exists(dir_):
+                os.makedirs(dir_)
+
     saver = tf.train.Saver(var_list=[var for var in tf.global_variables()])
     config = tf.ConfigProto()
     config.allow_soft_placement = True
@@ -477,18 +488,34 @@ def test():
             )
             img = sess.run(fetches,feed_dict={uv:_uv,basis:_basis})["output"]
 
-        img = img[0]
-        if save_exr:
-            h,w,c = img.shape
-            channels = [img[:,:,i].flatten() for i in range(c)]
-            exr_loader.EXRWriter(os.path.join(args.test_savedir,"%05d.exr") % idx,w,h,channels,channel=c)
+        if isinstance(img,list):
+            img_ = img
+            for i_level in range(args.module_count):
+                img = img_[i_level][0]
+                if save_exr:
+                    h,w,c = img.shape
+                    channels = [img[:, :, i].flatten() for i in range(c)]
+                    exr_loader.EXRWriter(os.path.join(args.test_savedir, "%d/%05d.exr") % (i_level,idx), w, h, channels, channel=c)
+                else:
+                    final_img = img[..., ::-1] * scale
+                    final_img = np.clip(final_img, 0, 1)
+                    final_img = final_img ** gamma
+                    final_img = np.clip(final_img * 255 + 0.5, 0, 255.99) # NOTICE,changed
+                    final_img = np.array(final_img, dtype='uint8')
+                    cv2.imwrite(os.path.join(args.test_savedir, "%d/%05d.png" % (i_level,idx)), final_img)
         else:
-            final_img = img[...,::-1] * scale
-            final_img = np.clip(final_img, 0, 1)
-            final_img = final_img ** gamma
-            final_img = np.clip(final_img * 255 + 0.5, 0, 255.99) # NOTICE,changed
-            final_img = np.array(final_img, dtype='uint8')
-            cv2.imwrite(os.path.join(args.test_savedir, "%05d.png" % idx), final_img)
+            img = img[0]
+            if save_exr:
+                h,w,c = img.shape
+                channels = [img[:,:,i].flatten() for i in range(c)]
+                exr_loader.EXRWriter(os.path.join(args.test_savedir,"%05d.exr") % idx,w,h,channels,channel=c)
+            else:
+                final_img = img[...,::-1] * scale
+                final_img = np.clip(final_img, 0, 1)
+                final_img = final_img ** gamma
+                final_img = np.clip(final_img * 255 + 0.5, 0, 255.99) # NOTICE,changed
+                final_img = np.array(final_img, dtype='uint8')
+                cv2.imwrite(os.path.join(args.test_savedir, "%05d.png" % idx), final_img)
 
 if __name__ == "__main__":
     if args.test_only:

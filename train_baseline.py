@@ -1,22 +1,16 @@
 import sys
 sys.path.append('./src')
-#import argparse
 import configargparse
 import os
 import tensorflow as tf
 from tqdm import tqdm
 import numpy as np
 
-# NOTICE !!
-#import config.config_exp1_downgrade as config # downgrade
+from IO_mapper import LogIOMapper
+from util import str2bool, set_random_seed, initial_logger, restore_model
+from neural_render import create_model
+from data_min_size import load_data,load_test_data
 
-# TODO, remove src
-from src.IO_mapper import LogIOMapper
-from src.util import str2bool, set_random_seed, initial_logger, restore_model
-from src.neural_render import create_model
-from src.data_min_size import load_data,load_test_data
-
-#parser = argparse.ArgumentParser()
 parser = configargparse.ArgumentParser()
 parser.add_argument('--config', is_config_file = True,
                     help = 'config file path')

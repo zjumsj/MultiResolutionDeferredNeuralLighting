@@ -1,12 +1,16 @@
 # A Multi-Resolution Network Architecture for Deferred Neural Lighting
+> Shengjie Ma, Hongzhi Wu, Zhong Ren, Kun Zhou <br />
+> CASA 2022
 
 Tensorflow implementation of paper *A Multi-Resolution Network Architecture for Deferred Neural Lighting* which is comming soon in CASA 2022.
+
 
 ![teaser](./fig/total2_casa.png)
 [Supplemantary video](https://zjumsj.github.io/MRNDNL.github.io/)
 
 Our method considerably improves the high-frequency details as well as temporal stability in rendering animation in neural relighting. The code is partially based on [DeferredNeuralLighting](https://github.com/msraig/DeferredNeuralLighting) and we refer to their method as *baseline*.   
 
+If you have any questions, please email 21821065@zju.edu.cn. 
 
 
 ## Setup
@@ -25,7 +29,7 @@ OpenEXR==1.3.2
 
 ## Dataset  
 
-We provide two training dataset (Pixiu statuette, Cluttered scene). [Download](TODO)
+We provide two training dataset (Pixiu statuette, Cluttered scene). [Download](https://zjueducn-my.sharepoint.com/:f:/g/personal/3140103086_zju_edu_cn/EpP3wkGqF9hBr_YJpKaGHSUBK08sfLCKMgj_qTOqwhuV4A?e=fvEfcO)
 
 The dataset is derived from [DeferredNeuralLighting](https://github.com/msraig/DeferredNeuralLighting) and modified. Note that we use only one network for each scene, instead of 13 ones to cover different viewing directions, as we find it enough for good results. We integrate the dataset from 13 clusters into one and remove the duplicate. To further test the generalization capacity and temporal consistency of the model, we create the reduced dataset from the full one by random selection. The scale of each dataset is shown below. 
 
@@ -42,7 +46,7 @@ The dataset is derived from [DeferredNeuralLighting](https://github.com/msraig/D
 
 We provide pre-trained models of all the five scenes including baseline models. We also provide models trained on both full and reduced dataset.
 
-The pretrained models can be found in folder *models* from [Google Drive](https://drive.google.com/drive/folders/1h2F9OFWf814opyvX_XiIc3OBJdyv9mEw?usp=sharing) or [OneDrive](https://zjueducn-my.sharepoint.com/:f:/g/personal/3140103086_zju_edu_cn/EoRrq2-SRjlLt7t4HLsXkwABYLHcJMetyH-hpYr3g84aeA?e=8kvKoj).
+The pre-trained models can be found in folder *models* from [Google Drive](https://drive.google.com/drive/folders/1h2F9OFWf814opyvX_XiIc3OBJdyv9mEw?usp=sharing) or [OneDrive](https://zjueducn-my.sharepoint.com/:f:/g/personal/3140103086_zju_edu_cn/EoRrq2-SRjlLt7t4HLsXkwABYLHcJMetyH-hpYr3g84aeA?e=8kvKoj).
 
 The models should be unzipped and put in `./models`. You should get something like this:  
 ```
@@ -85,7 +89,7 @@ Then, you can run `python gen_video_from_seq.py val` to generate videos from ima
 
 ## Train
 
-To train a model, you can download a training dataset [here](TODO) and put it in `./dataset`. You should get something like this:
+To train a model, you can download a training dataset [here](https://zjueducn-my.sharepoint.com/:f:/g/personal/3140103086_zju_edu_cn/EpP3wkGqF9hBr_YJpKaGHSUBK08sfLCKMgj_qTOqwhuV4A?e=fvEfcO) and put it in `./dataset`. You should get something like this:
 
 ```
 .

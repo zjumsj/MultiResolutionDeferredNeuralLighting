@@ -56,9 +56,9 @@ parser.add_argument("--mipmap", type=str2bool, default = True,
                     help = 'enable neural texture mipmap')
 
 parser.add_argument("--LDR",type=str2bool, default = False,
-                    help = 'TODO')
+                    help = 'compute loss in LDR space')
 parser.add_argument("--linear",type=str2bool, default = False,
-                    help = 'TODO')
+                    help = 'use linear space instead of sRGB')
 
 parser.add_argument("--crop_type",type=int, default = 0)
 parser.add_argument("--crop_w",type=int, default = 512,

@@ -160,11 +160,11 @@ def dumpcameralist(filename,data):
 def getposlist(filename):
     f = open(filename,'rb')
     data = f.read(4)
-    n = struct.unpack("i", data)[0] # read int
+    n = struct.unpack("i", data)[0]
     pos_list=[]
     for ii in range(n):
         data = f.read(3 * 4)
-        m = struct.unpack("3f",data) # write 3 float
+        m = struct.unpack("3f",data)
         m = np.array(m,dtype="float32")
         pos_list.append(m)
     f.close()

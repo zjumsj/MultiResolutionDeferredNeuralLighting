@@ -1,4 +1,4 @@
-# see vgg16.py
+# derived and modified from https://www.cs.toronto.edu/~frossard/tags/vgg16/
 
 import tensorflow as tf
 import numpy as np
@@ -240,7 +240,6 @@ class vgg16:
                 break
 
 
-#def perceptual_loss_vgg16(sess,criterion,img1,img2,layer_list,weight_list,first_call=True):
 def perceptual_loss_vgg16(criterion,img1,img2,layer_list,weight_list,first_call=True):
 
     assert(len(weight_list) == len(layer_list))
@@ -249,11 +248,9 @@ def perceptual_loss_vgg16(criterion,img1,img2,layer_list,weight_list,first_call=
     weight_ = weight_ / np.sum(weight_) # normalize it
 
     if first_call:
-        #model1 = vgg16(img1,reuse=False,trainable=False,weights='vgg/vgg16_weights.zip',sess=sess,layer_list=layer_list)
         model1 = vgg16(img1,reuse=False,trainable=False,layer_list=layer_list)
     else:
         model1 = vgg16(img1,reuse=True,trainable=False,layer_list=layer_list)
-    #model2 = vgg16(img2,reuse=True,trainable=False,sess=sess,layer_list=layer_list)
     model2 = vgg16(img2,reuse=True,trainable=False,layer_list=layer_list)
 
     out1 = model1.output
@@ -264,25 +261,3 @@ def perceptual_loss_vgg16(criterion,img1,img2,layer_list,weight_list,first_call=
         loss = loss + criterion(out1[idx],out2[idx]) * weight_[idx]
     return loss , model1
 
-# model validation
-if __name__ == "__main__":
-    import cv2
-    imgs = tf.placeholder(tf.float32,[1,224,224,3])
-
-    model = vgg16(imgs,False,False,"pool5")
-    sess = tf.Session()
-    model.load_weights('vgg16_weights.zip',sess)
-
-    img1 = cv2.imread('D:\\PycharmProjects\\test_vgg\\cat_224.jpg')
-    img1 = np.asarray(img1, dtype=np.float32)
-    img1 = img1[np.newaxis, :, :, ::-1]  # to RGB
-
-    output_ = sess.run(model.output, feed_dict={imgs: img1})
-    print(output_[0].shape)
-
-    ref = np.load('vgg16_pool5.npy')
-    this = output_[0]
-    diff = np.abs(ref - this)
-    print(np.mean(diff),diff.max())
-    print(this.max(),this.min())
-    print(ref.max(),ref.min())

@@ -140,7 +140,7 @@ def D_wgan(model,params_real,params_fake, patch_gan = True,
 
     loss += gradient_penalty * (wgan_lambda / (wgan_target ** 2))
 
-    with tf.name_scope("EpsilonPenalty"): # avoid drift ? I guess
+    with tf.name_scope("EpsilonPenalty"):
         epsilon_penalty = tf.square(real_scores_out)
         if patch_gan:
             epsilon_penalty = tf.reduce_mean(epsilon_penalty, axis=[1, 2, 3])
@@ -153,7 +153,6 @@ def D_wgan(model,params_real,params_fake, patch_gan = True,
             tf.abs(tf.gradients(fake_scores_out,fake_input))
         )
 
-    # loss is Nx?, should call reduce_mean outside
     return loss, output_summary, output_summary_image
 
 #------------------------------------------------------------------------

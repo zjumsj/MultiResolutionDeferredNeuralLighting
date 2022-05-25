@@ -84,9 +84,9 @@ parser.add_argument("--mipmap", type=str2bool, default = True,
                     help = 'enable neural texture mipmap')
 
 parser.add_argument("--LDR",type=str2bool, default = False,
-                    help = 'TODO')
+                    help = 'compute loss in LDR space')
 parser.add_argument("--linear",type=str2bool, default = False,
-                    help = 'TODO')
+                    help = 'use linear space instead of sRGB')
 
 parser.add_argument("--crop_type",type=int, default = 0)
 parser.add_argument("--crop_w",type=int, default = 512,
@@ -153,20 +153,11 @@ def create_summary(scalar,images,args):
     summary_op = tf.summary.merge(summary_writer.lists)
     return summary_op
 
-# TODO, are you sure you have lod ?
-'''
-Dataset = collections.namedtuple(
-    "Dataset",
-    "iterator,color,uv,lod,mask,basis,index"
-)
-'''
 Dataset = collections.namedtuple(
     "Dataset",
     "iterator,color,uv,mask,basis,index"
 )
 
-
-# TODO, are you sure you support lod ?
 def stupid_create_placeholder(args):
 
     batch_size = args.batch_size
@@ -177,7 +168,6 @@ def stupid_create_placeholder(args):
         iterator = None,
         color = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,3]),
         uv = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,2]),
-        #lod = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,1]),
         mask = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,1]),
         basis = tf.placeholder(tf.float32,[batch_size,resolution_h,resolution_w,15]),
         index = tf.placeholder(tf.int32,[batch_size,1])
@@ -189,7 +179,6 @@ def stupid_get_data(sess,dataset,dataset_in):
     dataset_ = sess.run([
         dataset.color,
         dataset.uv,
-        dataset.lod,
         dataset.mask,
         dataset.basis,
         dataset.index
@@ -199,10 +188,9 @@ def stupid_get_data(sess,dataset,dataset_in):
     dataset_out = {
         dataset_in.color: dataset_[0],
         dataset_in.uv: dataset_[1],
-        dataset_in.lod: dataset_[2],
-        dataset_in.mask: dataset_[3],
-        dataset_in.basis: dataset_[4],
-        dataset_in.index: dataset_[5]
+        dataset_in.mask: dataset_[2],
+        dataset_in.basis: dataset_[3],
+        dataset_in.index: dataset_[4]
     }
     return dataset_out
 
@@ -302,7 +290,7 @@ def main():
 
     if args.checkpoint is not None and args.checkpoint != "None":
         restore_model(sess, "G_", saver_G, args.checkpoint, args)
-        if args.adv_loss_scale != 0:
+        if args.adv_loss_scale != 0 and args.start_step == 0:
             restore_model(sess,"D_", saver_D, args.checkpoint, args)
 
     ################################################################
@@ -349,7 +337,7 @@ def main():
 
         if args.adv_loss_scale != 0:
 
-            # FIXME: quite stupid and inefficient, but TFRecordDataset does not provide proper API
+            # FIXME: quite stupid and inefficient, does TFRecordDataset provide proper API?
             # How to run twice with input fixed elegantly?
             data_feed_in = stupid_get_data(sess2, dataset, dataset_in)
             data_feed_in[lod] = lod_
@@ -500,7 +488,7 @@ def test():
                     final_img = img[..., ::-1] * scale
                     final_img = np.clip(final_img, 0, 1)
                     final_img = final_img ** gamma
-                    final_img = np.clip(final_img * 255 + 0.5, 0, 255.99) # NOTICE,changed
+                    final_img = np.clip(final_img * 255 + 0.5, 0, 255.99)
                     final_img = np.array(final_img, dtype='uint8')
                     cv2.imwrite(os.path.join(args.test_savedir, "%d/%05d.png" % (i_level,idx)), final_img)
         else:
@@ -513,7 +501,7 @@ def test():
                 final_img = img[...,::-1] * scale
                 final_img = np.clip(final_img, 0, 1)
                 final_img = final_img ** gamma
-                final_img = np.clip(final_img * 255 + 0.5, 0, 255.99) # NOTICE,changed
+                final_img = np.clip(final_img * 255 + 0.5, 0, 255.99)
                 final_img = np.array(final_img, dtype='uint8')
                 cv2.imwrite(os.path.join(args.test_savedir, "%05d.png" % idx), final_img)
 
